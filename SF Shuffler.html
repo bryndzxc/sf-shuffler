@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#070809;font-family:'Barlow',system-ui,sans-serif;color:#e6e8ec;-webkit-font-smoothing:antialiased}
+  ::-webkit-scrollbar{width:0;height:0}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @keyframes scanin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes popin{from{opacity:0;transform:scale(.96) translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  input::placeholder{color:#565c68}
+  input:focus{outline:none}
+</style>
+</helmet>
+<div style="{{ outerStyle }}">
+
+  <!-- DESKTOP SIDEBAR -->
+  <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ false }}">
+  <aside style="width:252px;flex-shrink:0;height:100vh;display:flex;flex-direction:column;padding:24px 16px;border-right:1px solid #1c1f26;background:rgba(10,11,14,.55)">
+    <div style="display:flex;align-items:center;gap:11px;padding:0 6px">
+      <div style="width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#f59e0b;clip-path:polygon(0 0,100% 0,100% 72%,72% 100%,0 100%)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 6v6c0 5 3.8 8.5 9 10 5.2-1.5 9-5 9-10V6l-9-4z" fill="#0a0b0e"/><path d="M12 7l4 2.5v3c0 2.3-1.7 3.8-4 4.5-2.3-.7-4-2.2-4-4.5v-3L12 7z" fill="#f59e0b"/></svg>
+      </div>
+      <div style="min-width:0">
+        <div style="font-family:'Oswald';font-weight:700;font-size:18px;letter-spacing:.13em;line-height:1;color:#f4f5f7">SF&middot;SHUFFLER</div>
+      </div>
+    </div>
+    <nav style="margin-top:30px;display:flex;flex-direction:column;gap:5px">
+      <sc-for list="{{ navItems }}" as="tab" hint-placeholder-count="3">
+        <button onClick="{{ tab.onClick }}" style="display:flex;align-items:center;gap:13px;padding:12px 13px;border:none;border-left:2px solid {{ tab.bd }};cursor:pointer;background:{{ tab.bg }};border-radius:0 3px 3px 0;text-align:left">
+          <div style="color:{{ tab.color }};display:flex" innerHTML="{{ tab.icon }}"></div>
+          <span style="font-family:'Oswald';font-weight:600;font-size:14px;letter-spacing:.14em;color:{{ tab.color }}">{{ tab.label }}</span>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="flex:1"></div>
+    <div style="border-top:1px solid #1c1f26;padding:16px 8px 4px;display:flex;align-items:baseline;gap:9px">
+      <div style="font-family:'Share Tech Mono';font-size:26px;color:#f4f5f7;line-height:1">{{ readyCount }}<span style="color:#565c68">/{{ totalCount }}</span></div>
+      <div style="font-family:'Oswald';font-weight:600;font-size:10px;letter-spacing:.2em;line-height:1.3;color:#8a909c">PLAYERS<br>READY</div>
+    </div>
+  </aside>
+  </sc-if>
+
+<div style="{{ mainStyle }}">
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ true }}">
+  <!-- TOP BAR -->
+  <div style="flex-shrink:0;position:relative;padding:14px 16px 12px;border-bottom:1px solid #1c1f26;display:flex;align-items:center;gap:11px;background:rgba(10,11,14,.7);backdrop-filter:blur(8px);z-index:5">
+    <div style="width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#f59e0b;clip-path:polygon(0 0,100% 0,100% 72%,72% 100%,0 100%)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 6v6c0 5 3.8 8.5 9 10 5.2-1.5 9-5 9-10V6l-9-4z" fill="#0a0b0e"/><path d="M12 7l4 2.5v3c0 2.3-1.7 3.8-4 4.5-2.3-.7-4-2.2-4-4.5v-3L12 7z" fill="#f59e0b"/></svg>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-family:'Oswald';font-weight:700;font-size:19px;letter-spacing:.14em;line-height:1;color:#f4f5f7">SF&middot;SHUFFLER</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:'Share Tech Mono';font-size:17px;color:#e6e8ec;line-height:1">{{ readyCount }}<span style="color:#565c68">/{{ totalCount }}</span></div>
+      <div style="font-family:'Oswald';font-size:9.5px;letter-spacing:.2em;color:#8a909c;margin-top:3px">READY</div>
+    </div>
+  </div>
+  <div style="flex-shrink:0;height:2px;background:linear-gradient(90deg,#f59e0b,#7c5210 40%,transparent)"></div>
+  </sc-if>
+
+  <!-- CONTENT -->
+  <div style="{{ contentStyle }}">
+
+    <!-- ============ ROSTER ============ -->
+    <sc-if value="{{ isRoster }}" hint-placeholder-val="{{ true }}">
+    <div style="{{ screenStyle }}">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+        <div style="font-family:'Oswald';font-weight:600;font-size:13px;letter-spacing:.22em;color:#8a909c">ROSTER</div>
+        <div style="flex:1;height:1px;background:#1c1f26"></div>
+        <div style="font-family:'Share Tech Mono';font-size:11px;color:#565c68">{{ rosterCountLabel }}</div>
+      </div>
+
+      <!-- ADD PLAYER -->
+      <div style="{{ addBlockStyle }}">
+        <div style="display:flex;gap:8px;margin-bottom:9px">
+          <input value="{{ addName }}" onInput="{{ onAddName }}" onKeyDown="{{ onAddKey }}" disabled="{{ rosterFull }}" placeholder="{{ addPlaceholder }}" style="flex:1;min-width:0;background:#070809;border:1px solid #262a33;border-radius:2px;padding:10px 11px;color:#e6e8ec;font-family:'Oswald';font-weight:500;letter-spacing:.08em;font-size:14px;text-transform:uppercase">
+          <button onClick="{{ addPlayer }}" disabled="{{ rosterFull }}" style="flex-shrink:0;background:{{ addBtnBg }};border:none;border-radius:2px;padding:0 16px;color:{{ addBtnColor }};font-family:'Oswald';font-weight:700;letter-spacing:.12em;font-size:13px;cursor:pointer">ADD</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="font-family:'Oswald';font-size:10px;letter-spacing:.16em;color:#565c68;margin-right:2px">TIER</span>
+          <sc-for list="{{ addTiers }}" as="t" hint-placeholder-count="4">
+            <button onClick="{{ t.onClick }}" style="flex:1;padding:7px 0;border-radius:2px;cursor:pointer;font-family:'Oswald';font-weight:700;font-size:13px;letter-spacing:.05em;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:8px">
+          <span style="font-family:'Oswald';font-size:10px;letter-spacing:.16em;color:#565c68;margin-right:2px">ROLE</span>
+          <sc-for list="{{ addRoles }}" as="r" hint-placeholder-count="2">
+            <button onClick="{{ r.onClick }}" style="flex:1;padding:7px 0;border-radius:2px;cursor:pointer;font-family:'Oswald';font-weight:700;font-size:12px;letter-spacing:.1em;background:{{ r.bg }};color:{{ r.fg }};border:1px solid {{ r.bd }}">{{ r.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- PLAYER LIST -->
+      <div style="{{ rosterListStyle }}">
+        <sc-for list="{{ roster }}" as="p" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;background:#101218;border:1px solid #21252e;border-left:3px solid {{ p.tierColor }};border-radius:3px;opacity:{{ p.rowOpacity }}">
+            <div style="position:relative;flex-shrink:0">
+              <div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:#0a0b0e;border:1.5px solid {{ p.tierColor }};clip-path:polygon(0 0,100% 0,100% 75%,75% 100%,0 100%);font-family:'Share Tech Mono';font-size:14px;color:{{ p.tierColor }};box-shadow:inset 0 0 12px {{ p.tierGlow }}">{{ p.initials }}</div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-family:'Oswald';font-weight:600;font-size:16px;letter-spacing:.06em;color:#eef0f3;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+              <div style="display:flex;align-items:center;gap:7px;row-gap:5px;flex-wrap:wrap;margin-top:5px">
+                <span style="flex-shrink:0;white-space:nowrap;font-family:'Oswald';font-weight:700;font-size:10px;letter-spacing:.04em;color:#0a0b0e;background:{{ p.tierColor }};padding:2px 10px 2px 7px;clip-path:polygon(0 0,100% 0,100% 72%,91% 100%,0 100%)">TIER {{ p.tier }}</span>
+                <span style="flex-shrink:0;white-space:nowrap;font-family:'Oswald';font-weight:600;font-size:9px;letter-spacing:.08em;color:{{ p.roleColor }};background:{{ p.roleBg }};border:1px solid {{ p.roleBd }};padding:2px 7px;border-radius:2px">{{ p.role }}</span>
+                <span style="font-family:'Share Tech Mono';font-size:11px;color:#6b7280">{{ p.games }} GP &middot; {{ p.winPct }}</span>
+              </div>
+            </div>
+            <button onClick="{{ p.onToggle }}" style="flex-shrink:0;width:62px;border:none;background:none;cursor:pointer;padding:0;text-align:center">
+              <div style="width:52px;height:26px;border-radius:14px;position:relative;background:{{ p.trackBg }};border:1px solid {{ p.trackBd }};margin:0 auto;transition:background .15s">
+                <div style="position:absolute;top:2px;left:{{ p.knobLeft }};width:20px;height:20px;border-radius:50%;background:{{ p.knobBg }};transition:left .15s"></div>
+              </div>
+              <div style="font-family:'Oswald';font-weight:600;font-size:9px;letter-spacing:.14em;margin-top:4px;color:{{ p.toggleColor }}">{{ p.toggleLabel }}</div>
+            </button>
+            <button onClick="{{ p.onRemove }}" title="Remove player" style="flex-shrink:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:none;border:1px solid #262a33;border-radius:3px;cursor:pointer;color:#565c68;transition:border-color .15s,color .15s" style-hover="border-color:#ef4444;color:#ef4444">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ DEPLOY ============ -->
+    <sc-if value="{{ isShuffle }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Deploy" style="{{ screenStyle }}">
+      <div style="{{ deployWrapStyle }}">
+
+      <!-- HEADER -->
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px">
+        <div style="font-family:'Oswald';font-weight:600;font-size:13px;letter-spacing:.22em;color:#8a909c">DEPLOY</div>
+        <div style="flex:1;height:1px;background:#1c1f26"></div>
+        <div style="font-family:'Share Tech Mono';font-size:11px;color:#565c68">{{ readyCount }} READY</div>
+      </div>
+
+      <!-- SHUFFLE BUTTON (HERO) -->
+      <button onClick="{{ doShuffle }}" style="width:100%;padding:18px 0;border:none;cursor:pointer;background:#f59e0b;color:#0a0b0e;font-family:'Oswald';font-weight:700;font-size:18px;letter-spacing:.2em;clip-path:polygon(0 0,100% 0,100% 68%,97% 100%,3% 100%,0 68%);box-shadow:0 8px 24px rgba(245,158,11,.28);margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:13px" style-active="transform:translateY(1px)">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M4 7h9l-2.2-2.2M20 7l-3 0M4 17h7l-2.2 2.2M20 17h-9" stroke="#0a0b0e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 7l3.5 5L14 17" stroke="#0a0b0e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        SHUFFLE TEAMS
+      </button>
+
+      <!-- AWAITING -->
+      <sc-if value="{{ noResult }}" hint-placeholder-val="{{ true }}">
+      <div style="text-align:center;padding:42px 20px;border:1px dashed #21252e;border-radius:3px;background:repeating-linear-gradient(135deg,transparent,transparent 9px,rgba(245,158,11,.025) 9px,rgba(245,158,11,.025) 18px)">
+        <div style="font-family:'Oswald';font-weight:600;font-size:15px;letter-spacing:.1em;color:#8a909c">AWAITING DEPLOYMENT</div>
+        <div style="font-family:'Share Tech Mono';font-size:11px;color:#565c68;margin-top:6px">{{ readyCount }} players ready &middot; tap shuffle teams</div>
+      </div>
+      </sc-if>
+
+      <!-- RESULT -->
+      <sc-if value="{{ hasResult }}" hint-placeholder-val="{{ false }}">
+      <div style="animation:popin .25s ease both">
+
+        <!-- BALANCE INDICATOR -->
+        <div style="background:#101218;border:1px solid #21252e;border-radius:3px;padding:14px 15px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+            <span style="display:inline-flex;align-items:center;gap:9px;white-space:nowrap;font-family:'Oswald';font-weight:700;font-size:15px;letter-spacing:.1em;color:{{ result.balanceColor }}">
+              <span style="width:9px;height:9px;border-radius:50%;background:{{ result.balanceColor }};box-shadow:0 0 9px {{ result.balanceColor }}"></span>
+              {{ result.balanceLabel }}
+            </span>
+            <span style="font-family:'Share Tech Mono';font-size:15px;color:#c8ccd4;letter-spacing:.08em">{{ result.countLabel }}</span>
+          </div>
+          <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:#070809;border:1px solid #1c1f26">
+            <div style="width:{{ result.alphaPct }}%;background:#f59e0b"></div>
+            <div style="width:{{ result.bravoPct }}%;background:#5b8bc4"></div>
+          </div>
+        </div>
+
+        <!-- TEAM COLUMNS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;align-items:start">
+
+          <!-- ALPHA -->
+          <div>
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 2px 9px;border-bottom:2px solid #f59e0b;margin-bottom:11px">
+              <span style="font-family:'Oswald';font-weight:700;font-size:20px;letter-spacing:.16em;color:#f59e0b">ALPHA</span>
+              <span style="text-align:right;line-height:1">
+                <span style="display:block;font-family:'Share Tech Mono';font-size:22px;color:#f4f5f7">{{ result.alphaPower }}</span>
+                <span style="display:block;font-family:'Oswald';font-weight:600;font-size:9px;letter-spacing:.2em;color:#565c68;margin-top:2px">POWER</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <sc-for list="{{ result.alpha }}" as="p" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:9px;padding:8px 9px;background:#101218;border:1px solid #21252e;border-left:3px solid {{ p.tierColor }};border-radius:3px">
+                  <div style="width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#0a0b0e;border:1.5px solid {{ p.tierColor }};clip-path:polygon(0 0,100% 0,100% 75%,75% 100%,0 100%);font-family:'Share Tech Mono';font-size:12px;color:{{ p.tierColor }};box-shadow:inset 0 0 10px {{ p.tierGlow }}">{{ p.initials }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-family:'Oswald';font-weight:600;font-size:14px;letter-spacing:.05em;color:#eef0f3;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+                    <div style="display:flex;align-items:center;gap:6px;row-gap:4px;flex-wrap:wrap;margin-top:4px">
+                      <span style="flex-shrink:0;white-space:nowrap;font-family:'Oswald';font-weight:700;font-size:9px;color:#0a0b0e;background:{{ p.tierColor }};padding:1px 6px;border-radius:1px">{{ p.tier }}</span>
+                      <span style="flex-shrink:0;white-space:nowrap;font-family:'Oswald';font-weight:700;font-size:8px;letter-spacing:.06em;color:{{ p.roleColor }};background:{{ p.roleBg }};border:1px solid {{ p.roleBd }};padding:1px 5px;border-radius:2px">{{ p.role }}</span>
+                      <span style="font-family:'Share Tech Mono';font-size:11px;color:#6b7280">{{ p.power }} PWR</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- BRAVO -->
+          <div>
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 2px 9px;border-bottom:2px solid #5b8bc4;margin-bottom:11px">
+              <span style="font-family:'Oswald';font-weight:700;font-size:20px;letter-spacing:.16em;color:#5b8bc4">BRAVO</span>
+              <span style="text-align:right;line-height:1">
+                <span style="display:block;font-family:'Share Tech Mono';font-size:22px;color:#f4f5f7">{{ result.bravoPower }}</span>
+                <span style="display:block;font-family:'Oswald';font-weight:600;font-size:9px;letter-spacing:.2em;color:#565c68;margin-top:2px">POWER</span>
+              </span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <sc-for list="{{ result.bravo }}" as="p" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:9px;padding:8px 9px;background:#101218;border:1px solid #21252e;border-left:3px solid {{ p.tierColor }};border-radius:3px">
+                  <div style="width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#0a0b0e;border:1.5px solid {{ p.tierColor }};clip-path:polygon(0 0,100% 0,100% 75%,75% 100%,0 100%);font-family:'Share Tech Mono';font-size:12px;color:{{ p.tierColor }};box-shadow:inset 0 0 10px {{ p.tierGlow }}">{{ p.initials }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-family:'Oswald';font-weight:600;font-size:14px;letter-spacing:.05em;color:#eef0f3;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+                    <div style="display:flex;align-items:center;gap:6px;row-gap:4px;flex-wrap:wrap;margin-top:4px">
+                      <span style="flex-shrink:0;white-space:nowrap;font-family:'Oswald';font-weight:700;font-size:9px;color:#0a0b0e;background:{{ p.tierColor }};padding:1px 6px;border-radius:1px">{{ p.tier }}</span>
+                      <span style="flex-shrink:0;white-space:nowrap;font-family:'Oswald';font-weight:700;font-size:8px;letter-spacing:.06em;color:{{ p.roleColor }};background:{{ p.roleBg }};border:1px solid {{ p.roleBd }};padding:1px 5px;border-radius:2px">{{ p.role }}</span>
+                      <span style="font-family:'Share Tech Mono';font-size:11px;color:#6b7280">{{ p.power }} PWR</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RECORD RESULT -->
+        <button onClick="{{ openRecord }}" style="width:100%;padding:14px 0;margin-bottom:10px;border:1px solid #4a3a16;cursor:pointer;background:rgba(245,158,11,.08);color:#f59e0b;font-family:'Oswald';font-weight:700;font-size:14px;letter-spacing:.16em;border-radius:2px;display:flex;align-items:center;justify-content:center;gap:9px" style-hover="background:rgba(245,158,11,.15);border-color:#f59e0b">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 21V4M5 4h11l-2 3 2 3H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          RECORD RESULT
+        </button>
+        <!-- ACTIONS -->
+        <div style="display:flex;gap:10px">
+          <button onClick="{{ doShuffle }}" style="flex:1;padding:14px 0;border:1px solid #2b303a;cursor:pointer;background:#161922;color:#e6e8ec;font-family:'Oswald';font-weight:600;font-size:13.5px;letter-spacing:.12em;border-radius:2px;display:flex;align-items:center;justify-content:center;gap:8px" style-hover="border-color:#f59e0b;color:#f59e0b">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h9l-2.2-2.2M20 7l-3 0M4 17h7l-2.2 2.2M20 17h-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 7l3.5 5L14 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            RESHUFFLE
+          </button>
+          <button onClick="{{ copyTeams }}" style="flex:1.4;padding:14px 0;border:1px solid {{ copyBd }};cursor:pointer;background:{{ copyBg }};color:{{ copyColor }};font-family:'Oswald';font-weight:600;font-size:13.5px;letter-spacing:.12em;border-radius:2px;transition:background .15s">{{ copyLabel }}</button>
+        </div>
+
+        <!-- RECORD RESULT MODAL -->
+        <sc-if value="{{ recordOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeRecord }}" style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(5,6,8,.82);backdrop-filter:blur(4px);animation:fadein .15s ease both">
+          <div onClick="{{ stopProp }}" style="width:100%;max-width:362px;background:#101218;border:1px solid #2b303a;border-top:3px solid #f59e0b;border-radius:4px;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.6);animation:popin .2s ease both">
+
+            <sc-if value="{{ recordAsk }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="text-align:center;font-family:'Share Tech Mono';font-size:10px;letter-spacing:.24em;color:#565c68;margin-bottom:5px">LOG MATCH OUTCOME</div>
+              <div style="text-align:center;font-family:'Oswald';font-weight:700;font-size:27px;letter-spacing:.14em;color:#f4f5f7;margin-bottom:20px">WHO WON?</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <button onClick="{{ winAlpha }}" style="display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border:1px solid #4a3a16;cursor:pointer;background:rgba(245,158,11,.08);border-radius:3px" style-hover="background:rgba(245,158,11,.16);border-color:#f59e0b">
+                  <span style="font-family:'Oswald';font-weight:700;font-size:19px;letter-spacing:.16em;color:#f59e0b">ALPHA</span>
+                  <span style="font-family:'Share Tech Mono';font-size:13px;color:#8a909c">{{ result.alphaPower }} PWR</span>
+                </button>
+                <button onClick="{{ winBravo }}" style="display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border:1px solid #2c3d52;cursor:pointer;background:rgba(91,139,196,.1);border-radius:3px" style-hover="background:rgba(91,139,196,.18);border-color:#5b8bc4">
+                  <span style="font-family:'Oswald';font-weight:700;font-size:19px;letter-spacing:.16em;color:#5b8bc4">BRAVO</span>
+                  <span style="font-family:'Share Tech Mono';font-size:13px;color:#8a909c">{{ result.bravoPower }} PWR</span>
+                </button>
+                <button onClick="{{ winDraw }}" style="display:flex;align-items:center;justify-content:center;padding:14px 17px;border:1px solid #2b303a;cursor:pointer;background:#161922;border-radius:3px" style-hover="border-color:#8b91a0">
+                  <span style="font-family:'Oswald';font-weight:700;font-size:16px;letter-spacing:.2em;color:#9aa0ac">DRAW</span>
+                </button>
+              </div>
+              <button onClick="{{ closeRecord }}" style="width:100%;margin-top:15px;background:none;border:none;cursor:pointer;font-family:'Oswald';font-weight:600;font-size:12px;letter-spacing:.18em;color:#565c68;padding:6px" style-hover="color:#8a909c">CANCEL</button>
+            </div>
+            </sc-if>
+
+            <sc-if value="{{ recordDone }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:10px 0 6px">
+              <div style="width:62px;height:62px;margin:0 auto 18px;border-radius:50%;border:2px solid #34d399;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(52,211,153,.35)">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#34d399" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div style="font-family:'Oswald';font-weight:700;font-size:23px;letter-spacing:.14em;color:#f4f5f7">MATCH LOGGED</div>
+              <div style="font-family:'Oswald';font-weight:700;font-size:14px;letter-spacing:.18em;margin-top:9px;color:{{ confirmColor }}">{{ confirmSub }}</div>
+              <div style="font-family:'Share Tech Mono';font-size:10px;letter-spacing:.14em;color:#565c68;margin-top:11px">INTEL UPDATED</div>
+            </div>
+            </sc-if>
+
+          </div>
+        </div>
+        </sc-if>
+
+      </div>
+      </sc-if>
+
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ INTEL ============ -->
+    <sc-if value="{{ isStats }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Intel" style="{{ screenStyle }}">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+        <div style="font-family:'Oswald';font-weight:600;font-size:13px;letter-spacing:.16em;color:#8a909c;white-space:nowrap;flex-shrink:0">INTEL &middot; LEADERBOARD</div>
+        <div style="flex:1;height:1px;background:#1c1f26"></div>
+        <div style="font-family:'Share Tech Mono';font-size:11px;color:#565c68;white-space:nowrap;flex-shrink:0">BY WIN RATE</div>
+      </div>
+
+      <div style="{{ leaderListStyle }}">
+        <sc-for list="{{ leaderboard }}" as="p" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:11px;padding:11px 12px;background:{{ p.rowBg }};border:1px solid {{ p.rowBd }};border-radius:3px">
+            <div style="width:24px;flex-shrink:0;text-align:center;font-family:'Oswald';font-weight:700;font-size:18px;color:{{ p.rankColor }};line-height:1">{{ p.rank }}</div>
+            <div style="width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#0a0b0e;border:1.5px solid {{ p.tierColor }};clip-path:polygon(0 0,100% 0,100% 75%,75% 100%,0 100%);font-family:'Share Tech Mono';font-size:13px;color:{{ p.tierColor }};box-shadow:inset 0 0 12px {{ p.tierGlow }}">{{ p.initials }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:7px">
+                <span style="font-family:'Oswald';font-weight:600;font-size:15px;letter-spacing:.05em;color:#eef0f3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</span>
+                <span style="flex-shrink:0;font-family:'Oswald';font-weight:700;font-size:9px;color:#0a0b0e;background:{{ p.tierColor }};padding:1px 5px;border-radius:1px">{{ p.tier }}</span>
+                <span style="flex-shrink:0;white-space:nowrap;font-family:'Oswald';font-weight:600;font-size:9px;letter-spacing:.06em;color:{{ p.roleColor }};background:{{ p.roleBg }};border:1px solid {{ p.roleBd }};padding:1px 6px;border-radius:2px">{{ p.role }}</span>
+              </div>
+              <div style="display:flex;height:4px;border-radius:3px;overflow:hidden;background:#070809;margin-top:7px">
+                <div style="width:{{ p.barPct }}%;background:{{ p.tierColor }}"></div>
+              </div>
+              <div style="font-family:'Share Tech Mono';font-size:10px;color:#565c68;margin-top:5px">{{ p.wins }}W &middot; {{ p.games }} GP</div>
+            </div>
+            <div style="flex-shrink:0;text-align:right">
+              <div style="font-family:'Share Tech Mono';font-size:20px;color:#f4f5f7;line-height:1">{{ p.winPct }}</div>
+              <div style="display:inline-block;font-family:'Oswald';font-weight:600;font-size:10px;letter-spacing:.08em;margin-top:5px;color:{{ p.streakColor }};background:{{ p.streakBg }};padding:2px 7px;border-radius:2px">{{ p.streakLabel }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+  </div>
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ true }}">
+  <!-- TAB BAR -->
+  <div style="flex-shrink:0;display:flex;background:rgba(9,10,13,.92);backdrop-filter:blur(10px);border-top:1px solid #1c1f26;padding:7px 8px calc(7px + env(safe-area-inset-bottom));z-index:5">
+    <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="3">
+      <button onClick="{{ tab.onClick }}" style="flex:1;background:none;border:none;cursor:pointer;padding:7px 0 5px;display:flex;flex-direction:column;align-items:center;gap:5px;position:relative">
+        <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:26px;height:2px;background:{{ tab.barColor }};border-radius:2px"></div>
+        <div style="color:{{ tab.color }}" innerHTML="{{ tab.icon }}"></div>
+        <span style="font-family:'Oswald';font-weight:600;font-size:10px;letter-spacing:.16em;color:{{ tab.color }}">{{ tab.label }}</span>
+      </button>
+    </sc-for>
+  </div>
+  </sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;clanTag&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;SF&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'roster',
+    isDesktop: (typeof window !== 'undefined' && window.matchMedia('(min-width: 900px)').matches),
+    isWide: (typeof window !== 'undefined' && window.matchMedia('(min-width: 1160px)').matches),
+    addName: '',
+    addTier: 'B',
+    addRole: 'RIFLE',
+    copied: false,
+    result: null,
+    recordOpen: false,
+    recordPhase: 'ask',
+    recordWinner: null,
+    seq: 11,
+    players: [
+      { id:1, name:'VIPER', tier:'S', role:'RIFLE', present:true, wins:34, games:40, streak:5 },
+      { id:2, name:'GHOST', tier:'S', role:'SNIPER', present:true, wins:28, games:36, streak:-2 },
+      { id:3, name:'SABRE', tier:'S', role:'RIFLE', present:true, wins:31, games:45, streak:3 },
+      { id:4, name:'REAPER', tier:'A', role:'RIFLE', present:true, wins:22, games:33, streak:1 },
+      { id:5, name:'FALCON', tier:'A', role:'RIFLE', present:true, wins:19, games:30, streak:-1 },
+      { id:6, name:'NOMAD', tier:'A', role:'RIFLE', present:true, wins:25, games:38, streak:4 },
+      { id:7, name:'WRAITH', tier:'A', role:'SNIPER', present:true, wins:17, games:31, streak:2 },
+      { id:8, name:'BRAVO6', tier:'B', role:'RIFLE', present:true, wins:16, games:30, streak:1 },
+      { id:9, name:'ECHO', tier:'B', role:'RIFLE', present:false, wins:12, games:27, streak:-1 },
+      { id:10, name:'RECON', tier:'C', role:'SNIPER', present:true, wins:8, games:22, streak:2 },
+    ],
+  };
+
+  TIER_BASE = { S:95, A:78, B:60, C:42 };
+  TIER_COLOR = { S:'#ef4444', A:'#f59e0b', B:'#5b8bc4', C:'#8b91a0' };
+  TIER_GLOW = { S:'rgba(239,68,68,.45)', A:'rgba(245,158,11,.45)', B:'rgba(91,139,196,.4)', C:'rgba(139,145,160,.3)' };
+
+  derive(p) {
+    const games = p.games || 0;
+    const winRate = games ? p.wins / games : 0;
+    const power = this.TIER_BASE[p.tier] + Math.round(winRate * 18);
+    const sc = p.streak || 0;
+    const present = !!p.present;
+    const role = p.role || 'RIFLE';
+    return {
+      ...p, present, winRate, power,
+      initials: p.name.replace(/[^A-Za-z0-9]/g,'').slice(0,2).toUpperCase() || '??',
+      winPct: Math.round(winRate * 100) + '%',
+      tierColor: this.TIER_COLOR[p.tier],
+      tierGlow: this.TIER_GLOW[p.tier],
+      role,
+      isSniper: role === 'SNIPER',
+      roleColor: role === 'SNIPER' ? '#c3a3f5' : '#8a909c',
+      roleBg: role === 'SNIPER' ? 'rgba(168,124,242,.15)' : 'transparent',
+      roleBd: role === 'SNIPER' ? '#7c5cb8' : '#2b303a',
+      rowOpacity: present ? 1 : 0.42,
+      trackBg: present ? '#f59e0b' : '#1a1d24',
+      trackBd: present ? '#f59e0b' : '#2b303a',
+      knobLeft: present ? '28px' : '2px',
+      knobBg: present ? '#0a0b0e' : '#565c68',
+      toggleLabel: present ? 'READY' : 'OUT',
+      toggleColor: present ? '#f59e0b' : '#565c68',
+      streakLabel: sc > 0 ? ('W' + sc) : (sc < 0 ? ('L' + (-sc)) : '\u2014'),
+      streakColor: sc > 0 ? '#34d399' : (sc < 0 ? '#ef4444' : '#8a909c'),
+      streakBg: sc > 0 ? 'rgba(52,211,153,.12)' : (sc < 0 ? 'rgba(239,68,68,.12)' : 'rgba(138,144,156,.1)'),
+    };
+  }
+
+  go(screen) { this.setState({ screen }); }
+
+  componentDidMount() {
+    if (typeof window === 'undefined') return;
+    this._onMq = () => this.setState({
+      isDesktop: window.matchMedia('(min-width: 900px)').matches,
+      isWide: window.matchMedia('(min-width: 1160px)').matches,
+    });
+    this._mqA = window.matchMedia('(min-width: 900px)');
+    this._mqB = window.matchMedia('(min-width: 1160px)');
+    [this._mqA, this._mqB].forEach(m => m.addEventListener ? m.addEventListener('change', this._onMq) : m.addListener(this._onMq));
+  }
+  componentWillUnmount() {
+    [this._mqA, this._mqB].forEach(m => { if (!m) return; m.removeEventListener ? m.removeEventListener('change', this._onMq) : m.removeListener(this._onMq); });
+  }
+
+  onAddName = (e) => this.setState({ addName: e.target.value });
+  onAddKey = (e) => { if (e.key === 'Enter') this.addPlayer(); };
+  setAddTier(t) { this.setState({ addTier: t }); }
+  setAddRole(r) { this.setState({ addRole: r }); }
+  addPlayer = () => {
+    const name = (this.state.addName || '').trim();
+    if (!name || this.state.players.length >= 10) return;
+    const id = this.state.seq;
+    this.setState(s => ({
+      players: [...s.players, { id, name, tier: s.addTier, role: s.addRole, present: true, wins: 0, games: 0, streak: 0 }],
+      addName: '', seq: s.seq + 1,
+    }));
+  };
+  toggle(id) {
+    this.setState(s => ({ players: s.players.map(p => p.id === id ? { ...p, present: !p.present } : p) }));
+  }
+  removePlayer(id) {
+    this.setState(s => ({ players: s.players.filter(p => p.id !== id) }));
+  }
+
+  doShuffle = () => {
+    const present = this.state.players.filter(p => p.present).map(p => this.derive(p));
+    const arr = present.slice().sort(() => Math.random() - 0.5).sort((a,b) => b.power - a.power);
+    const A = [], B = []; let pa = 0, pb = 0;
+    for (const p of arr) {
+      if (pa < pb || (pa === pb && A.length <= B.length)) { A.push(p); pa += p.power; }
+      else { B.push(p); pb += p.power; }
+    }
+    const diff = Math.abs(pa - pb);
+    this.setState({ result: {
+      alpha: A, bravo: B, alphaPower: pa, bravoPower: pb, diff,
+      leader: pa > pb ? 'ALPHA' : (pb > pa ? 'BRAVO' : 'EVEN'),
+      balanced: diff <= 12,
+      alphaPct: (pa + pb) ? Math.round(pa / (pa + pb) * 100) : 50,
+    }, copied: false });
+  };
+
+  copyTeams = () => {
+    const r = this.state.result; if (!r) return;
+    const tag = this.props.clanTag || 'SF';
+    const line = (p) => `  \u2022 ${p.name} (${p.tier}) \u2014 ${p.power}`;
+    const bal = r.diff === 0 ? 'PERFECTLY BALANCED' : ('POWER GAP ' + r.diff);
+    const txt = '```\n'
+      + `[${tag}] TEAM SHUFFLE  \u00b7  ${r.alpha.length}v${r.bravo.length}\n`
+      + '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n'
+      + `ALPHA   [PWR ${r.alphaPower}]\n`
+      + r.alpha.map(line).join('\n') + '\n\n'
+      + `BRAVO   [PWR ${r.bravoPower}]\n`
+      + r.bravo.map(line).join('\n') + '\n'
+      + '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n'
+      + `BALANCE: ${bal}\n`
+      + '```';
+    try { navigator.clipboard.writeText(txt); } catch (e) {}
+    this.setState({ copied: true });
+    clearTimeout(this._ct);
+    this._ct = setTimeout(() => this.setState({ copied: false }), 1600);
+  };
+
+  openRecord = () => this.setState({ recordOpen: true, recordPhase: 'ask', recordWinner: null });
+  closeRecord = () => this.setState({ recordOpen: false });
+  stopProp = (e) => e.stopPropagation();
+  recordWin = (side) => {
+    const r = this.state.result; if (!r) return;
+    const inA = new Set(r.alpha.map(p => p.id));
+    const inB = new Set(r.bravo.map(p => p.id));
+    this.setState(s => ({
+      players: s.players.map(p => {
+        let o = null;
+        if (inA.has(p.id)) o = side === 'ALPHA' ? 'W' : (side === 'BRAVO' ? 'L' : 'D');
+        else if (inB.has(p.id)) o = side === 'BRAVO' ? 'W' : (side === 'ALPHA' ? 'L' : 'D');
+        if (!o) return p;
+        const games = (p.games || 0) + 1;
+        let wins = p.wins || 0, streak = p.streak || 0;
+        if (o === 'W') { wins += 1; streak = streak > 0 ? streak + 1 : 1; }
+        else if (o === 'L') { streak = streak < 0 ? streak - 1 : -1; }
+        return { ...p, wins, games, streak };
+      }),
+      recordPhase: 'done', recordWinner: side,
+    }));
+    clearTimeout(this._rt);
+    this._rt = setTimeout(() => this.setState({ recordOpen: false }), 1900);
+  };
+
+  icon(name, active) {
+    const c = active ? '#f59e0b' : '#5a606c';
+    const s = `width:22px;height:22px`;
+    if (name === 'roster') return `<svg style="${s}" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3.2" stroke="${c}" stroke-width="1.8"/><path d="M2.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/><circle cx="17" cy="9" r="2.4" stroke="${c}" stroke-width="1.6"/><path d="M16 14.2c2.6-.3 5 1.4 5 4.3" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+    if (name === 'deploy') return `<svg style="${s}" viewBox="0 0 24 24" fill="none"><path d="M4 7h9l-2.2-2.2M20 7l-3 0M4 17h7l-2.2 2.2M20 17h-9" stroke="${c}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 7l3.5 5L14 17" stroke="${c}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    return `<svg style="${s}" viewBox="0 0 24 24" fill="none"><path d="M4 20V11M10 20V5M16 20v-6M22 20H2" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const screen = s.screen;
+    const players = s.players;
+    const roster = players.map(p => { const d = this.derive(p); d.onToggle = () => this.toggle(p.id); d.onRemove = () => this.removePlayer(p.id); return d; });
+    const readyCount = players.filter(p => p.present).length;
+
+    const tabDefs = [
+      { key:'roster', label:'ROSTER', n:'roster' },
+      { key:'shuffle', label:'DEPLOY', n:'deploy' },
+      { key:'stats', label:'INTEL', n:'intel' },
+    ];
+    const tabs = tabDefs.map(t => {
+      const active = screen === t.key;
+      return { label:t.label, icon:this.icon(t.n, active), color: active ? '#f59e0b' : '#5a606c',
+        barColor: active ? '#f59e0b' : 'transparent', onClick: () => this.go(t.key) };
+    });
+
+    const addTiers = ['S','A','B','C'].map(t => {
+      const active = s.addTier === t; const col = this.TIER_COLOR[t];
+      return { label:t, onClick: () => this.setAddTier(t),
+        bg: active ? col : '#0a0b0e', fg: active ? '#0a0b0e' : col, bd: active ? col : '#262a33' };
+    });
+
+    const addRoles = ['RIFLE','SNIPER'].map(ro => {
+      const active = s.addRole === ro; const col = ro === 'SNIPER' ? '#a87cf2' : '#9aa0ac';
+      return { label:ro, onClick: () => this.setAddRole(ro),
+        bg: active ? col : '#0a0b0e', fg: active ? '#0a0b0e' : col, bd: active ? col : '#262a33' };
+    });
+
+    const r = s.result;
+    const result = r ? {
+      ...r,
+      bravoPct: 100 - r.alphaPct,
+      alphaCount: r.alpha.length, bravoCount: r.bravo.length,
+      countLabel: r.alpha.length + ' V ' + r.bravo.length,
+      balanceLabel: r.diff === 0 ? 'PERFECTLY BALANCED' : ('POWER GAP: ' + r.diff),
+      balanceColor: r.diff <= 6 ? '#34d399' : (r.diff <= 16 ? '#f59e0b' : '#ef6a4d'),
+    } : null;
+
+    const leaderboard = players.map(p => this.derive(p))
+      .sort((a,b) => b.winRate - a.winRate || b.games - a.games)
+      .map((p, i) => ({ ...p, rank: i + 1,
+        rankColor: i === 0 ? '#f59e0b' : i === 1 ? '#c8ccd4' : i === 2 ? '#cd7f32' : '#5a606c',
+        barPct: Math.round(p.winRate * 100),
+        rowBg: i < 3 ? '#12141a' : '#0e1015',
+        rowBd: i === 0 ? 'rgba(245,158,11,.4)' : '#1c1f26' }));
+
+    const desktop = !!s.isDesktop;
+    const wide = !!s.isWide;
+    const navItems = tabDefs.map(t => {
+      const active = screen === t.key;
+      return { label: t.key === 'stats' ? 'LEADERBOARD' : t.label, icon:this.icon(t.n, active),
+        color: active ? '#f59e0b' : '#8a909c',
+        bg: active ? 'rgba(245,158,11,.10)' : 'transparent',
+        bd: active ? '#f59e0b' : 'transparent',
+        onClick: () => this.go(t.key) };
+    });
+
+    return {
+      isDesktop: desktop, isMobile: !desktop, navItems,
+      outerStyle: desktop
+        ? 'height:100vh;display:flex;background:radial-gradient(150% 90% at 0% 0%,#15171d 0%,#0b0c10 50%,#070809 100%)'
+        : 'height:100vh;display:flex;justify-content:center;background:#070809',
+      mainStyle: desktop
+        ? 'flex:1;min-width:0;height:100vh;display:flex;flex-direction:column;position:relative'
+        : 'width:100%;max-width:440px;height:100%;display:flex;flex-direction:column;position:relative;background:radial-gradient(120% 60% at 50% -8%,#15171d 0%,#0a0b0e 48%,#070809 100%);box-shadow:0 0 0 1px #1c1f26',
+      contentStyle: 'flex:1;overflow-y:auto;overflow-x:hidden',
+      screenStyle: desktop ? 'padding:32px 40px 48px;max-width:1160px;margin:0 auto;width:100%' : 'padding:16px 14px 92px',
+      addBlockStyle: desktop
+        ? 'background:#101218;border:1px solid #21252e;border-radius:3px;padding:14px;margin-bottom:20px;max-width:580px'
+        : 'background:#101218;border:1px solid #21252e;border-radius:3px;padding:11px;margin-bottom:16px',
+      rosterListStyle: desktop ? 'display:grid;grid-template-columns:repeat(auto-fill,minmax(278px,1fr));gap:10px' : 'display:flex;flex-direction:column;gap:8px',
+      deployWrapStyle: desktop ? 'max-width:860px;margin:0 auto' : '',
+      leaderListStyle: desktop ? 'display:grid;grid-template-columns:1fr 1fr;gap:10px' : 'display:flex;flex-direction:column;gap:8px',
+      isRoster: screen === 'roster', isShuffle: screen === 'shuffle', isStats: screen === 'stats',
+      readyCount, totalCount: players.length,
+      roster, tabs, addTiers, addRoles,
+      addName: s.addName,
+      rosterFull: players.length >= 10,
+      addPlaceholder: players.length >= 10 ? 'ROSTER FULL \u2014 10 MAX' : 'ADD PLAYER CALLSIGN',
+      addBtnBg: players.length >= 10 ? '#161922' : '#f59e0b',
+      addBtnColor: players.length >= 10 ? '#565c68' : '#0a0b0e',
+      rosterCountLabel: players.length + ' / 10',
+      onAddName: this.onAddName, onAddKey: this.onAddKey, addPlayer: this.addPlayer,
+      doShuffle: this.doShuffle, copyTeams: this.copyTeams,
+      hasResult: !!result, noResult: !result, result,
+      copyLabel: s.copied ? 'COPIED \u2713' : 'COPY FOR DISCORD',
+      copyBg: s.copied ? '#34d399' : '#1a1d24',
+      copyColor: s.copied ? '#0a0b0e' : '#e6e8ec',
+      copyBd: s.copied ? '#34d399' : '#2b303a',
+      openRecord: this.openRecord, closeRecord: this.closeRecord, stopProp: this.stopProp,
+      winAlpha: () => this.recordWin('ALPHA'),
+      winBravo: () => this.recordWin('BRAVO'),
+      winDraw: () => this.recordWin('DRAW'),
+      recordOpen: s.recordOpen, recordAsk: s.recordPhase === 'ask', recordDone: s.recordPhase === 'done',
+      confirmColor: s.recordWinner === 'ALPHA' ? '#f59e0b' : (s.recordWinner === 'BRAVO' ? '#5b8bc4' : '#9aa0ac'),
+      confirmSub: s.recordWinner === 'DRAW' ? 'DRAW' : ((s.recordWinner || '') + ' VICTORY'),
+      leaderboard,
+    };
+  }
+}
+</script>
+</body>
+</html>
