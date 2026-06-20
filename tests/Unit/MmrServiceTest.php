@@ -5,14 +5,13 @@ namespace Tests\Unit;
 use App\Models\GameMatch;
 use App\Models\Player;
 use App\Services\MmrService;
-use Illuminate\Support\Collection;
 use PHPUnit\Framework\TestCase;
 
 class MmrServiceTest extends TestCase
 {
-    private function player(int $id, string $tier): Player
+    private function player(int $id): Player
     {
-        $p = new Player(['name' => "P{$id}", 'tier' => $tier, 'role' => 'rifle']);
+        $p = new Player(['name' => "P{$id}", 'role' => 'rifle']);
         $p->id = $id;
 
         return $p;
@@ -28,50 +27,60 @@ class MmrServiceTest extends TestCase
         ]);
     }
 
-    public function test_unplayed_players_sit_at_their_tier_seed(): void
+    public function test_everyone_starts_at_the_flat_c_seed(): void
     {
-        $players = collect([
-            $this->player(1, 'S'),
-            $this->player(2, 'A'),
-            $this->player(3, 'B'),
-            $this->player(4, 'C'),
-        ]);
+        $players = collect([$this->player(1), $this->player(2), $this->player(3)]);
 
         $ratings = (new MmrService)->ratings($players, collect());
 
-        $this->assertSame(1000, $ratings[1]['mmr']);
-        $this->assertSame(800, $ratings[2]['mmr']);
-        $this->assertSame(650, $ratings[3]['mmr']);
-        $this->assertSame(500, $ratings[4]['mmr']);
-        $this->assertSame(0, $ratings[1]['games']);
+        foreach ([1, 2, 3] as $id) {
+            $this->assertSame(MmrService::SEED, $ratings[$id]['mmr']);
+            $this->assertSame(500, $ratings[$id]['mmr']);
+            $this->assertSame('C', $ratings[$id]['tier']);
+            $this->assertSame(0, $ratings[$id]['games']);
+        }
+    }
+
+    public function test_tier_is_derived_from_mmr_thresholds(): void
+    {
+        $svc = new MmrService;
+
+        $this->assertSame('C', $svc->tierForMmr(500));
+        $this->assertSame('C', $svc->tierForMmr(649));
+        $this->assertSame('B', $svc->tierForMmr(650));
+        $this->assertSame('B', $svc->tierForMmr(799));
+        $this->assertSame('A', $svc->tierForMmr(800));
+        $this->assertSame('A', $svc->tierForMmr(999));
+        $this->assertSame('S', $svc->tierForMmr(1000));
+        $this->assertSame('S', $svc->tierForMmr(1500));
     }
 
     public function test_a_win_adds_25_and_a_loss_subtracts_15(): void
     {
-        $players = collect([$this->player(1, 'B'), $this->player(2, 'B')]);
+        $players = collect([$this->player(1), $this->player(2)]);
         $matches = collect([$this->match([1], [2], 0)]); // team 0 (player 1) wins
 
         $ratings = (new MmrService)->ratings($players, $matches);
 
-        $this->assertSame(675, $ratings[1]['mmr']); // 650 + 25
-        $this->assertSame(635, $ratings[2]['mmr']); // 650 − 15
+        $this->assertSame(525, $ratings[1]['mmr']); // 500 + 25
+        $this->assertSame(485, $ratings[2]['mmr']); // 500 − 15
         $this->assertSame(1, $ratings[1]['games']);
     }
 
     public function test_a_draw_adds_5_to_both_sides(): void
     {
-        $players = collect([$this->player(1, 'B'), $this->player(2, 'B')]);
+        $players = collect([$this->player(1), $this->player(2)]);
         $matches = collect([$this->match([1], [2], null)]); // draw
 
         $ratings = (new MmrService)->ratings($players, $matches);
 
-        $this->assertSame(655, $ratings[1]['mmr']);
-        $this->assertSame(655, $ratings[2]['mmr']);
+        $this->assertSame(505, $ratings[1]['mmr']);
+        $this->assertSame(505, $ratings[2]['mmr']);
     }
 
     public function test_mmr_never_drops_below_the_floor(): void
     {
-        $players = collect([$this->player(1, 'C'), $this->player(2, 'S')]);
+        $players = collect([$this->player(1), $this->player(2)]);
         // 40 straight losses for player 1 would reach 500 − 600 = −100 unclamped.
         $matches = collect(array_fill(0, 40, null))
             ->map(fn () => $this->match([1], [2], 1)); // team 1 wins every time
@@ -82,31 +91,28 @@ class MmrServiceTest extends TestCase
         $this->assertSame(100, $ratings[1]['mmr']);
     }
 
-    public function test_results_accumulate_across_games(): void
+    public function test_results_accumulate_and_can_level_up_a_tier(): void
     {
-        $players = collect([$this->player(1, 'B'), $this->player(2, 'B')]);
-        $matches = collect([
-            $this->match([1], [2], 0), // 1 wins: 675 / 635
-            $this->match([1], [2], 0), // 1 wins: 700 / 620
-            $this->match([1], [2], 1), // 2 wins: 685 / 645
-        ]);
+        $players = collect([$this->player(1), $this->player(2)]);
+        // Player 1 wins 6 straight: 500 + 6·25 = 650 → crosses into tier B.
+        $matches = collect(array_fill(0, 6, null))
+            ->map(fn () => $this->match([1], [2], 0));
 
         $ratings = (new MmrService)->ratings($players, $matches);
 
-        $this->assertSame(685, $ratings[1]['mmr']);
-        $this->assertSame(645, $ratings[2]['mmr']);
-        $this->assertSame(3, $ratings[1]['games']);
+        $this->assertSame(650, $ratings[1]['mmr']);
+        $this->assertSame('B', $ratings[1]['tier']);
+        $this->assertSame(6, $ratings[1]['games']);
     }
 
-    public function test_blended_power_anchors_on_tier_then_drifts_with_mmr(): void
+    public function test_power_map_returns_raw_mmr(): void
     {
-        $svc = new MmrService;
+        $players = collect([$this->player(1), $this->player(2)]);
+        $matches = collect([$this->match([1], [2], 0)]);
 
-        // At seed (mmr == tier seed) power equals the seed exactly.
-        $this->assertSame(650.0, $svc->blendedPower('B', 650));
+        $map = (new MmrService)->powerMap($players, $matches);
 
-        // A higher earned MMR pulls power up by MMR_BLEND of the gap.
-        // 0.4*650 + 0.6*750 = 710.
-        $this->assertSame(710.0, $svc->blendedPower('B', 750));
+        $this->assertSame(525, $map[1]);
+        $this->assertSame(485, $map[2]);
     }
 }

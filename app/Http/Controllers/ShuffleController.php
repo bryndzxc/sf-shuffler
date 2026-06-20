@@ -6,6 +6,7 @@ use App\Models\GameMatch;
 use App\Models\Player;
 use App\Services\MmrService;
 use App\Services\ShuffleService;
+use App\Support\Series;
 use Inertia\Inertia;
 
 class ShuffleController extends Controller
@@ -18,7 +19,7 @@ class ShuffleController extends Controller
         $present = $this->presentPlayers();
 
         if ($present->isEmpty()) {
-            session()->forget(['shuffle', 'shuffleSig', 'recordedGames']);
+            session()->forget(['shuffle', 'shuffleSig', 'series']);
 
             return $this->render($present, null);
         }
@@ -38,7 +39,7 @@ class ShuffleController extends Controller
         $present = $this->presentPlayers();
 
         if ($present->isEmpty()) {
-            session()->forget(['shuffle', 'shuffleSig', 'recordedGames']);
+            session()->forget(['shuffle', 'shuffleSig', 'series']);
         } else {
             $this->store($this->shuffler->shuffle($present, $this->lastTeams(), $this->powerMap($present)), $this->signature($present));
         }
@@ -46,10 +47,27 @@ class ShuffleController extends Controller
         return redirect()->route('shuffle.index');
     }
 
-    /** Blended tier+MMR balancing weight per present player. */
+    /** MMR-based balancing weight per present player. */
     private function powerMap($present): array
     {
         return $this->mmr->powerMap($present, GameMatch::orderBy('played_at')->orderBy('id')->get());
+    }
+
+    /** Shape a game's stored series for the frontend (null = not started). */
+    private function seriesPayload(?array $s): ?array
+    {
+        if ($s === null) {
+            return null;
+        }
+
+        return [
+            'bestOf' => $s['bestOf'],
+            'maps' => $s['maps'],
+            'results' => $s['results'],
+            'wins' => Series::wins($s['results']),
+            'needed' => Series::majority($s['bestOf']),
+            'winner' => Series::winner($s['bestOf'], $s['results']),
+        ];
     }
 
     /** Previous teams (id arrays) from the session, for re-shuffle variety. */
@@ -65,7 +83,7 @@ class ShuffleController extends Controller
         session([
             'shuffle' => $shuffle,
             'shuffleSig' => $sig,
-            'recordedGames' => [], // fresh shuffle → nothing logged yet
+            'series' => [], // fresh shuffle → no series started yet
         ]);
     }
 
@@ -75,7 +93,7 @@ class ShuffleController extends Controller
         $hydrated = $this->hydrate($shuffle, $present, $powerMap);
         $teams = $hydrated['teams'] ?? [];
         $powers = $hydrated['powers'] ?? [];
-        $recorded = session('recordedGames', []);
+        $series = session('series', []);
 
         $games = [];
         for ($gi = 0; $gi < intdiv(count($teams), 2); $gi++) {
@@ -86,7 +104,7 @@ class ShuffleController extends Controller
                 'teamIndices' => [$a, $b],
                 'teams' => [$teams[$a], $teams[$b]],
                 'powers' => [$powers[$a], $powers[$b]],
-                'recorded' => in_array($gi, $recorded, true),
+                'series' => $this->seriesPayload($series[$gi] ?? null),
             ];
         }
 
@@ -140,9 +158,9 @@ class ShuffleController extends Controller
             ->map(fn (Player $p) => [
                 'id' => $p->id,
                 'name' => $p->name,
-                'tier' => $p->tier,
+                'tier' => $this->mmr->tierForMmr((int) ($powerMap[$p->id] ?? MmrService::SEED)),
                 'role' => $p->role,
-                'weight' => (int) round($powerMap[$p->id] ?? $p->weight),
+                'weight' => (int) round($powerMap[$p->id] ?? MmrService::SEED),
             ])
             ->values();
 

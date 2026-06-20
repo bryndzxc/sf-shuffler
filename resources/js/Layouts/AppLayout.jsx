@@ -1,5 +1,5 @@
 import { useIsDesktop } from '@/hooks';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
 const AMBER = '#f59e0b';
 const INK = '#0a0b0e';
@@ -96,6 +96,7 @@ export default function AppLayout({ title, children }) {
     const page = usePage();
     const url = page.url;
     const counts = page.props.rosterCounts || { ready: 0, total: 0 };
+    const isAdmin = page.props.isAdmin;
 
     const isActive = (item) => url.startsWith(item.match);
 
@@ -149,6 +150,20 @@ export default function AppLayout({ title, children }) {
 
                     <div style={{ borderTop: '1px solid #1c1f26', padding: '16px 8px 4px' }}>
                         <ReadyCounter ready={counts.ready} total={counts.total} size="lg" />
+                        {isAdmin && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
+                                <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 10, letterSpacing: '.14em', color: INK, background: '#34d399', padding: '2px 7px', borderRadius: 2 }}>
+                                    ADMIN ✓
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => router.post('/admin/logout')}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, letterSpacing: '.14em', color: DIM, padding: 0 }}
+                                >
+                                    LOGOUT
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </aside>
             )}

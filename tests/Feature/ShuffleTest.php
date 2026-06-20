@@ -95,6 +95,6 @@ class ShuffleTest extends TestCase
 
         $this->post('/shuffle')->assertRedirect(route('shuffle.index'));
         $this->assertNotNull(session('shuffle'));
-        $this->assertSame([], session('recordedGames'));
+        $this->assertSame([], session('series'));
     }
 }

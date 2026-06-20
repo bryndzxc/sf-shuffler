@@ -27,15 +27,18 @@ class ShuffleService
     /** Cap on teams formed (10 teams = 5 games = 50 players). */
     public const MAX_TEAMS = 10;
 
+    /** Balancing weight for a player with no MMR supplied (equal weighting). */
+    private const DEFAULT_WEIGHT = 1;
+
     /** Score penalty for reproducing the previous shuffle exactly. */
     private const REPEAT_PENALTY = 1000;
 
     /**
      * @param  Collection<int,Player>  $players  candidates (caller filters to present)
      * @param  array<int,array<int>>|null  $lastTeams  team id-arrays from the previous shuffle
-     * @param  array<int,float>|null  $ratings  player id → balancing weight; falls
-     *                                          back to the tier weight when absent
-     *                                          (the blended MMR power in practice)
+     * @param  array<int,float>|null  $ratings  player id → balancing weight (each
+     *                                          player's MMR); absent ids fall back
+     *                                          to a flat weight (equal balancing)
      * @return array{teams: array<int,array<int>>, powers: array<int,int>, reserves: array<int>}
      */
     public function shuffle(Collection $players, ?array $lastTeams = null, ?array $ratings = null): array
@@ -43,7 +46,7 @@ class ShuffleService
         $snipers = [];
         $rifles = [];
         foreach ($players as $p) {
-            $entry = ['id' => $p->id, 'weight' => $ratings[$p->id] ?? $p->weight];
+            $entry = ['id' => $p->id, 'weight' => $ratings[$p->id] ?? self::DEFAULT_WEIGHT];
             $p->isSniper() ? $snipers[] = $entry : $rifles[] = $entry;
         }
 

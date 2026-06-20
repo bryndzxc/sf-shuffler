@@ -1,7 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { useIsDesktop } from '@/hooks';
 import { ROLE_META, ROLE_ORDER, nextRole } from '@/roles';
-import { TIER_COLOR, TIER_GLOW, TIER_ORDER, initials, nextTier } from '@/tiers';
+import { TIER_COLOR, TIER_GLOW, initials } from '@/tiers';
 import { router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -78,16 +78,14 @@ function SquareButton({ onClick, title, hoverColor, children }) {
     );
 }
 
-function TierBadge({ tier, onClick }) {
+function TierBadge({ tier }) {
     return (
-        <button
-            type="button"
-            onClick={onClick}
-            title="Click to change tier"
-            style={{ flexShrink: 0, whiteSpace: 'nowrap', cursor: 'pointer', border: 'none', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 10, letterSpacing: '.04em', color: INK, background: TIER_COLOR[tier], padding: '3px 11px 3px 8px', clipPath: 'polygon(0 0,100% 0,100% 72%,91% 100%,0 100%)' }}
+        <span
+            title="Tier is earned from MMR"
+            style={{ flexShrink: 0, whiteSpace: 'nowrap', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 10, letterSpacing: '.04em', color: INK, background: TIER_COLOR[tier], padding: '3px 11px 3px 8px', clipPath: 'polygon(0 0,100% 0,100% 72%,91% 100%,0 100%)' }}
         >
             TIER {tier}
-        </button>
+        </span>
     );
 }
 
@@ -105,7 +103,7 @@ function RoleBadge({ role, onClick }) {
     );
 }
 
-function PlayerCard({ player }) {
+function PlayerCard({ player, isAdmin }) {
     const [editing, setEditing] = useState(false);
     const [name, setName] = useState(player.name);
 
@@ -149,7 +147,7 @@ function PlayerCard({ player }) {
                     </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginTop: 6 }}>
-                    <TierBadge tier={player.tier} onClick={() => patch({ tier: nextTier(player.tier) })} />
+                    <TierBadge tier={player.tier} />
                     <RoleBadge role={player.role} onClick={() => patch({ role: nextRole(player.role) })} />
                     <span style={{ fontFamily: "'Share Tech Mono'", fontSize: 11, color: '#f59e0b' }} title="Match rating (seeded from tier, moves with results)">
                         {player.mmr} MMR
@@ -159,24 +157,26 @@ function PlayerCard({ player }) {
 
             <PresentToggle present={player.present} onClick={() => patch({ present: !player.present })} />
 
-            <SquareButton
-                onClick={() => {
-                    if (confirm(`Delete ${player.name} permanently?`))
-                        router.delete(route('roster.destroy', player.id), opts);
-                }}
-                title="Delete permanently"
-                hoverColor="#ef4444"
-            >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-            </SquareButton>
+            {isAdmin && (
+                <SquareButton
+                    onClick={() => {
+                        if (confirm(`Delete ${player.name} permanently?`))
+                            router.delete(route('roster.destroy', player.id), opts);
+                    }}
+                    title="Delete permanently (admin)"
+                    hoverColor="#ef4444"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </SquareButton>
+            )}
         </div>
     );
 }
 
-function AddBlock({ tiers, roles, full, max }) {
-    const { data, setData, post, processing, reset } = useForm({ name: '', tier: 'B', role: 'rifle' });
+function AddBlock({ roles, full, max }) {
+    const { data, setData, post, processing, reset } = useForm({ name: '', role: 'rifle' });
 
     const submit = () => {
         if (full || !data.name.trim() || processing) return;
@@ -205,23 +205,6 @@ function AddBlock({ tiers, roles, full, max }) {
                 </button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span style={{ fontFamily: "'Oswald'", fontSize: 10, letterSpacing: '.16em', color: '#565c68', marginRight: 2 }}>TIER</span>
-                {tiers.map((t) => {
-                    const active = data.tier === t;
-                    const col = TIER_COLOR[t];
-                    return (
-                        <button
-                            key={t}
-                            type="button"
-                            onClick={() => setData('tier', t)}
-                            style={{ flex: 1, padding: '7px 0', borderRadius: 2, cursor: 'pointer', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 13, letterSpacing: '.05em', background: active ? col : '#0a0b0e', color: active ? INK : col, border: `1px solid ${active ? col : '#262a33'}` }}
-                        >
-                            {t}
-                        </button>
-                    );
-                })}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 8 }}>
                 <span style={{ fontFamily: "'Oswald'", fontSize: 10, letterSpacing: '.16em', color: '#565c68', marginRight: 2 }}>ROLE</span>
                 {roles.map((ro) => {
                     const active = data.role === ro;
@@ -257,7 +240,7 @@ function MiniButton({ onClick, children }) {
     );
 }
 
-export default function RosterIndex({ players, tiers, roles, maxRoster = 50 }) {
+export default function RosterIndex({ players, roles, maxRoster = 50, isAdmin = false }) {
     const isDesktop = useIsDesktop();
     const full = players.length >= maxRoster;
 
@@ -277,7 +260,7 @@ export default function RosterIndex({ players, tiers, roles, maxRoster = 50 }) {
                 }
             />
 
-            <AddBlock tiers={tiers || TIER_ORDER} roles={roles || ROLE_ORDER} full={full} max={maxRoster} />
+            <AddBlock roles={roles || ROLE_ORDER} full={full} max={maxRoster} />
 
             {players.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '42px 20px', border: '1px dashed #21252e', borderRadius: 3, fontFamily: "'Oswald'", fontWeight: 600, letterSpacing: '.1em', color: '#8a909c' }}>
@@ -286,7 +269,7 @@ export default function RosterIndex({ players, tiers, roles, maxRoster = 50 }) {
             ) : (
                 <div style={listStyle}>
                     {players.map((p) => (
-                        <PlayerCard key={p.id} player={p} />
+                        <PlayerCard key={p.id} player={p} isAdmin={isAdmin} />
                     ))}
                 </div>
             )}

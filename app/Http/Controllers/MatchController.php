@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GameMatch;
 use App\Models\Player;
+use App\Support\Series;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -20,6 +21,7 @@ class MatchController extends Controller
             ->paginate(20)
             ->through(fn (GameMatch $m) => [
                 'id' => $m->id,
+                'map' => $m->map,
                 'played_at' => $m->played_at?->toIso8601String(),
                 'teams' => collect($m->teams)->map(
                     fn (array $ids) => collect($ids)
@@ -35,7 +37,7 @@ class MatchController extends Controller
         ]);
     }
 
-    /** Record one game (a pair of teams) of the current shuffle. */
+    /** Record one map of a game's Best-of-N series. */
     public function store(Request $request)
     {
         $shuffle = session('shuffle');
@@ -49,23 +51,39 @@ class MatchController extends Controller
 
         $data = $request->validate([
             'game' => ['required', 'integer', 'min:0', 'max:'.max(0, $gameCount - 1)],
-            'winner' => ['required', Rule::in(['0', '1', 'draw'])], // winner within the game's two teams
+            'mapIndex' => ['required', 'integer', 'min:0'],
+            'winner' => ['required', Rule::in(['0', '1'])], // winning team within the game (no draws)
         ]);
 
         $game = (int) $data['game'];
+        $mapIndex = (int) $data['mapIndex'];
+
+        $series = session('series', []);
+        $s = $series[$game] ?? null;
+
+        // A series must be started, the map must exist and be unplayed, and the
+        // series must not already be decided.
+        if (! $s
+            || ! array_key_exists($mapIndex, $s['maps'])
+            || $s['results'][$mapIndex] !== null
+            || Series::decided($s['bestOf'], $s['results'])) {
+            return back();
+        }
+
         $a = 2 * $game;
         $b = 2 * $game + 1;
 
         GameMatch::create([
             'teams' => [$shuffle['teams'][$a], $shuffle['teams'][$b]],
             'powers' => [$shuffle['powers'][$a], $shuffle['powers'][$b]],
-            'winner_team' => $data['winner'] === 'draw' ? null : (int) $data['winner'],
+            'winner_team' => (int) $data['winner'],
+            'map' => $s['maps'][$mapIndex],
             'played_at' => now(),
         ]);
 
-        $recorded = session('recordedGames', []);
-        $recorded[] = $game;
-        session(['recordedGames' => array_values(array_unique($recorded))]);
+        $s['results'][$mapIndex] = (int) $data['winner'];
+        $series[$game] = $s;
+        session(['series' => $series]);
 
         return back();
     }

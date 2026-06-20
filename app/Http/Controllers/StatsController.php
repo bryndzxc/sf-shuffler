@@ -17,7 +17,10 @@ class StatsController extends Controller
 
         $ratings = $mmr->ratings($players, $matches);
         $leaderboard = array_map(
-            fn (array $row) => $row + ['mmr' => $ratings[$row['id']]['mmr']],
+            fn (array $row) => $row + [
+                'mmr' => $ratings[$row['id']]['mmr'],
+                'tier' => $ratings[$row['id']]['tier'], // derived from MMR
+            ],
             $stats->leaderboard($players, $matches),
         );
 

@@ -12,7 +12,7 @@ class RosterTest extends TestCase
 
     public function test_roster_page_renders(): void
     {
-        Player::create(['name' => 'Ghost', 'tier' => 'S']);
+        Player::create(['name' => 'Ghost']);
 
         $this->get('/roster')
             ->assertOk()
@@ -20,7 +20,8 @@ class RosterTest extends TestCase
                 ->component('Roster/Index')
                 ->has('players', 1)
                 ->where('players.0.name', 'Ghost')
-                ->where('players.0.weight', 4));
+                ->where('players.0.tier', 'C')   // everyone starts at the C baseline
+                ->where('players.0.mmr', 500));
     }
 
     public function test_home_redirects_to_roster(): void
@@ -30,12 +31,11 @@ class RosterTest extends TestCase
 
     public function test_can_add_a_player_with_defaults(): void
     {
-        $this->post('/roster', ['name' => 'Viper', 'tier' => 'A'])
+        $this->post('/roster', ['name' => 'Viper'])
             ->assertRedirect();
 
         $this->assertDatabaseHas('players', [
             'name' => 'Viper',
-            'tier' => 'A',
             'role' => 'rifle', // defaults to rifle
             'present' => false,
         ]);
@@ -66,10 +66,10 @@ class RosterTest extends TestCase
         $this->assertDatabaseCount('players', 0);
     }
 
-    public function test_add_player_validates_name_and_tier(): void
+    public function test_add_player_validates_name(): void
     {
-        $this->post('/roster', ['name' => '', 'tier' => 'Z'])
-            ->assertSessionHasErrors(['name', 'tier']);
+        $this->post('/roster', ['name' => ''])
+            ->assertSessionHasErrors('name');
 
         $this->assertDatabaseCount('players', 0);
     }
@@ -106,16 +106,13 @@ class RosterTest extends TestCase
         $this->assertTrue($wolf->refresh()->present);
     }
 
-    public function test_can_cycle_tier_and_toggle_present(): void
+    public function test_can_toggle_present(): void
     {
-        $player = Player::create(['name' => 'Wolf', 'tier' => 'B']);
+        $player = Player::create(['name' => 'Wolf']);
 
-        $this->patch("/roster/{$player->id}", ['tier' => 'C']);
         $this->patch("/roster/{$player->id}", ['present' => true]);
 
-        $player->refresh();
-        $this->assertSame('C', $player->tier);
-        $this->assertTrue($player->present);
+        $this->assertTrue($player->refresh()->present);
     }
 
     public function test_mark_all_present_and_clear(): void
@@ -156,11 +153,13 @@ class RosterTest extends TestCase
         $this->assertSame(Player::MAX_PLAYERS, Player::count());
     }
 
-    public function test_can_delete_a_player(): void
+    public function test_admin_can_delete_a_player(): void
     {
-        $player = Player::create(['name' => 'Rookie', 'tier' => 'C']);
+        $player = Player::create(['name' => 'Rookie']);
 
-        $this->delete("/roster/{$player->id}")->assertRedirect();
+        $this->withSession(['is_admin' => true])
+            ->delete("/roster/{$player->id}")
+            ->assertRedirect();
 
         $this->assertDatabaseMissing('players', ['id' => $player->id]);
     }

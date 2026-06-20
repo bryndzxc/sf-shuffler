@@ -19,6 +19,7 @@ class GameMatch extends Model
         'teams',
         'powers',
         'winner_team',
+        'map',
         'played_at',
     ];
 

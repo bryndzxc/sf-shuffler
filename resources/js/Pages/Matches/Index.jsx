@@ -22,8 +22,15 @@ function MatchCard({ match, isDesktop, names }) {
     return (
         <div style={{ background: '#101218', border: '1px solid #21252e', borderRadius: 3, padding: '12px 14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11, gap: 10 }}>
-                <span style={{ fontFamily: "'Share Tech Mono'", fontSize: 11, color: '#6b7280' }}>
-                    {formatDate(match.played_at)}
+                <span style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
+                    <span style={{ fontFamily: "'Share Tech Mono'", fontSize: 11, color: '#6b7280', whiteSpace: 'nowrap' }}>
+                        {formatDate(match.played_at)}
+                    </span>
+                    {match.map && (
+                        <span style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, letterSpacing: '.08em', color: '#8a909c', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            · {match.map}
+                        </span>
+                    )}
                 </span>
                 {draw ? (
                     <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 10, letterSpacing: '.16em', color: '#9aa0ac', background: 'rgba(138,144,156,.12)', padding: '3px 9px', borderRadius: 2 }}>

@@ -11,46 +11,40 @@ use Inertia\Inertia;
 
 class PlayerController extends Controller
 {
-    /** Roster page: every player, ordered by tier then name. */
+    /** Roster page: every player, ordered by rating (MMR) then name. */
     public function index(MmrService $mmr)
     {
-        $tierRank = array_flip(Player::TIERS); // S => 0, A => 1, …
-
         $players = Player::all();
         $ratings = $mmr->ratings($players, GameMatch::orderBy('played_at')->orderBy('id')->get());
 
         $players = $players
             ->sortBy(fn (Player $p) => sprintf(
-                '%d-%s',
-                $tierRank[$p->tier] ?? 9,
+                '%06d-%s',
+                999999 - $ratings[$p->id]['mmr'], // highest MMR first
                 strtolower($p->name),
             ))
             ->values()
             ->map(fn (Player $p) => [
                 'id' => $p->id,
                 'name' => $p->name,
-                'tier' => $p->tier,
+                'tier' => $ratings[$p->id]['tier'], // derived from MMR
                 'role' => $p->role,
                 'present' => $p->present,
-                'weight' => $p->weight,
                 'mmr' => $ratings[$p->id]['mmr'],
             ]);
 
         return Inertia::render('Roster/Index', [
             'players' => $players,
-            'tiers' => Player::TIERS,
             'roles' => Player::ROLES,
-            'tierWeights' => Player::TIER_WEIGHTS,
             'maxRoster' => Player::MAX_PLAYERS,
         ]);
     }
 
-    /** Add a player to the clan. */
+    /** Add a player to the clan. New players start at the C-tier baseline. */
     public function store(Request $request)
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:50', $this->uniqueNameRule()],
-            'tier' => ['required', Rule::in(Player::TIERS)],
             'role' => ['sometimes', Rule::in(Player::ROLES)],
         ]);
 
@@ -65,12 +59,11 @@ class PlayerController extends Controller
         return back();
     }
 
-    /** Edit name/tier/role or toggle present — all fields optional. */
+    /** Edit name/role or toggle present — all fields optional. */
     public function update(Request $request, Player $player)
     {
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:50', $this->uniqueNameRule($player->id)],
-            'tier' => ['sometimes', 'required', Rule::in(Player::TIERS)],
             'role' => ['sometimes', 'required', Rule::in(Player::ROLES)],
             'present' => ['sometimes', 'boolean'],
         ]);

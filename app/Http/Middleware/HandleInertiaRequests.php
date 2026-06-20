@@ -36,6 +36,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Single-password admin gate (unlocks delete; see AdminController).
+            'isAdmin' => fn () => (bool) $request->session()->get('is_admin'),
             // Drives the "players ready" counter in the nav shell (present/total).
             'rosterCounts' => fn () => [
                 'ready' => Player::where('present', true)->count(),

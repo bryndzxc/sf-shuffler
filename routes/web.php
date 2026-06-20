@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\MatchController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\ShuffleController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\TeamNameController;
@@ -16,14 +18,27 @@ Route::controller(PlayerController::class)->group(function () {
     Route::get('/roster', 'index')->name('roster.index');
     Route::post('/roster', 'store')->name('roster.store');
     Route::patch('/roster/{player}', 'update')->name('roster.update');
-    Route::delete('/roster/{player}', 'destroy')->name('roster.destroy');
+    Route::delete('/roster/{player}', 'destroy')->middleware('admin')->name('roster.destroy');
     Route::post('/roster/present/all', 'markAllPresent')->name('roster.present.all');
     Route::post('/roster/present/clear', 'clearPresent')->name('roster.present.clear');
+});
+
+// Hidden admin gate (intentionally not in the nav).
+Route::controller(AdminController::class)->group(function () {
+    Route::get('/admin/login', 'show')->name('admin.login');
+    Route::post('/admin/login', 'login')->name('admin.login.attempt');
+    Route::post('/admin/logout', 'logout')->name('admin.logout');
 });
 
 Route::controller(ShuffleController::class)->group(function () {
     Route::get('/shuffle', 'index')->name('shuffle.index');
     Route::post('/shuffle', 'run')->name('shuffle.run');
+});
+
+Route::controller(SeriesController::class)->group(function () {
+    Route::post('/series/start', 'start')->name('series.start');
+    Route::post('/series/reroll', 'reroll')->name('series.reroll');
+    Route::post('/series/reset', 'reset')->name('series.reset');
 });
 
 Route::get('/matches', [MatchController::class, 'index'])->name('matches.index');

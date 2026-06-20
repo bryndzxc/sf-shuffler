@@ -7,6 +7,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 const INK = '#0a0b0e';
+const opts = { preserveScroll: true };
 
 function EditableTeamName({ slot, fontSize = 16 }) {
     const teamNames = usePage().props.teamNames;
@@ -107,12 +108,117 @@ function TeamColumn({ teamIndex, players, power }) {
     );
 }
 
-function GameCard({ game, onRecord }) {
+function FormatPicker({ onPick }) {
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+            <span style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 11, letterSpacing: '.18em', color: '#8a909c', marginRight: 2 }}>SERIES</span>
+            {[3, 5].map((n) => (
+                <button
+                    key={n}
+                    type="button"
+                    onClick={() => onPick(n)}
+                    style={{ flex: 1, padding: '10px 0', cursor: 'pointer', background: '#0e1015', border: '1px solid #2b303a', borderRadius: 2, color: '#e6e8ec', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 13, letterSpacing: '.12em' }}
+                >
+                    BEST OF {n}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function MapRow({ map, mapIndex, result, decided, labels, onRecord, onReroll }) {
+    const recorded = result !== null && result !== undefined;
+    const win = recorded && result !== 'draw' ? labels[Number(result)] : null;
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 9px', background: '#0d0f14', border: '1px solid #1c1f26', borderRadius: 3, opacity: !recorded && decided ? 0.4 : 1 }}>
+            <span style={{ fontFamily: "'Share Tech Mono'", fontSize: 10, color: '#565c68', width: 30, flexShrink: 0 }}>M{mapIndex + 1}</span>
+            <span style={{ flex: 1, minWidth: 0, fontFamily: "'Oswald'", fontWeight: 600, fontSize: 13, letterSpacing: '.04em', color: '#e6e8ec', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {map}
+            </span>
+
+            {recorded ? (
+                <span style={{ flexShrink: 0, fontFamily: "'Oswald'", fontWeight: 700, fontSize: 10, letterSpacing: '.1em', color: win ? INK : '#9aa0ac', background: win ? win.color : 'rgba(138,144,156,.18)', padding: '3px 9px', borderRadius: 2 }}>
+                    {win ? `${win.label} ✓` : 'DRAW'}
+                </span>
+            ) : decided ? (
+                <span style={{ flexShrink: 0, fontFamily: "'Share Tech Mono'", fontSize: 10, color: '#565c68' }}>—</span>
+            ) : (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                    <button type="button" title={`Re-roll ${map}`} onClick={onReroll} style={{ width: 26, height: 26, cursor: 'pointer', background: 'none', border: '1px solid #262a33', borderRadius: 3, color: '#8a909c', fontSize: 12 }}>🎲</button>
+                    {labels.map((l, i) => (
+                        <button key={i} type="button" onClick={() => onRecord(i)} title={`${l.label} won`} style={{ padding: '5px 11px', cursor: 'pointer', background: `${l.color}14`, border: `1px solid ${l.color}55`, borderRadius: 2, color: l.color, fontFamily: "'Oswald'", fontWeight: 700, fontSize: 11, letterSpacing: '.06em' }}>
+                            {l.label}
+                        </button>
+                    ))}
+                </span>
+            )}
+        </div>
+    );
+}
+
+function SeriesSection({ game, labels }) {
+    const s = game.series;
+
+    const start = (bestOf) => router.post(route('series.start'), { game: game.index, bestOf }, opts);
+    const reset = () => router.post(route('series.reset'), { game: game.index }, opts);
+    const reroll = (mapIndex) => router.post(route('series.reroll'), { game: game.index, mapIndex }, opts);
+    const record = (mapIndex, winner) =>
+        router.post(route('matches.store'), { game: game.index, mapIndex, winner: String(winner) }, opts);
+
+    if (!s) return <FormatPicker onPick={start} />;
+
+    const decided = s.winner !== null;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 1 }}>
+                <span style={{ fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, letterSpacing: '.16em', color: '#8a909c' }}>
+                    BEST OF {s.bestOf} · FIRST TO {s.needed}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontFamily: "'Share Tech Mono'", fontSize: 13 }}>
+                        <span style={{ color: labels[0].color }}>{s.wins[0]}</span>
+                        <span style={{ color: '#565c68' }}> – </span>
+                        <span style={{ color: labels[1].color }}>{s.wins[1]}</span>
+                    </span>
+                    <button type="button" onClick={reset} title="Change format / clear series" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#565c68', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 10, letterSpacing: '.1em', padding: 0 }}>
+                        RESET
+                    </button>
+                </span>
+            </div>
+
+            {s.maps.map((map, mi) => (
+                <MapRow
+                    key={mi}
+                    map={map}
+                    mapIndex={mi}
+                    result={s.results[mi]}
+                    decided={decided}
+                    labels={labels}
+                    onRecord={(w) => record(mi, w)}
+                    onReroll={() => reroll(mi)}
+                />
+            ))}
+
+            {decided && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 3, padding: '11px 0', border: `1px solid ${labels[s.winner].color}55`, background: `${labels[s.winner].color}12`, borderRadius: 2, fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, letterSpacing: '.14em', color: labels[s.winner].color }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    {labels[s.winner].label} WINS THE SERIES {s.wins[0]}–{s.wins[1]}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function GameCard({ game }) {
+    const teamNames = usePage().props.teamNames;
     const [a, b] = game.teams;
     const [pa, pb] = game.powers;
     const total = pa + pb;
     const spread = Math.abs(pa - pb);
     const balColor = spread <= 1 ? '#34d399' : spread <= 3 ? '#f59e0b' : '#ef6a4d';
+    const labels = game.teamIndices.map((idx) => ({ label: teamLabel(idx, teamNames), color: teamColor(idx) }));
 
     return (
         <div style={{ background: 'rgba(16,18,24,.5)', border: '1px solid #1c1f26', borderRadius: 4, padding: 12, marginBottom: 12 }}>
@@ -134,17 +240,7 @@ function GameCard({ game, onRecord }) {
                 <TeamColumn teamIndex={game.teamIndices[1]} players={b} power={pb} />
             </div>
 
-            {game.recorded ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 0', border: '1px solid #1c3a2a', background: 'rgba(52,211,153,.07)', borderRadius: 2, fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, letterSpacing: '.16em', color: '#34d399' }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#34d399" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    RESULT LOGGED
-                </div>
-            ) : (
-                <button type="button" onClick={() => onRecord(game)} style={{ width: '100%', padding: '11px 0', border: '1px solid #4a3a16', cursor: 'pointer', background: 'rgba(245,158,11,.08)', color: '#f59e0b', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 12, letterSpacing: '.16em', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 21V4M5 4h11l-2 3 2 3H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    RECORD RESULT
-                </button>
-            )}
+            <SeriesSection game={game} labels={labels} />
         </div>
     );
 }
@@ -169,17 +265,22 @@ function ReserveStrip({ reserves }) {
     );
 }
 
+function playerLine(p) {
+    const role = p.role === 'sniper' ? 'Sniper' : 'Rifle';
+    return `  • ${p.name} [${role}] (${p.tier})`;
+}
+
 function discordText(games, bye, reserves, names) {
     const rule = '─'.repeat(22);
-    const team = (idx, players, pwr) => `${teamLabel(idx, names)} [PWR ${pwr}]\n` + (players.map((p) => `  • ${p.name} (${p.tier})`).join('\n') || '  • (none)');
+    const team = (idx, players, pwr) => `${teamLabel(idx, names)} [PWR ${pwr}]\n` + (players.map(playerLine).join('\n') || '  • (none)');
     const blocks = games.map((g) =>
         `▌ GAME ${g.index + 1}\n` +
         team(g.teamIndices[0], g.teams[0], g.powers[0]) + '\n' +
         team(g.teamIndices[1], g.teams[1], g.powers[1])
     );
-    if (bye) blocks.push(`▌ ${teamLabel(bye.teamIndex, names)} — awaiting opponent\n` + (bye.players.map((p) => `  • ${p.name} (${p.tier})`).join('\n')));
+    if (bye) blocks.push(`▌ ${teamLabel(bye.teamIndex, names)} — awaiting opponent\n` + (bye.players.map(playerLine).join('\n')));
     let txt = '```\n[SF] TEAM SHUFFLE\n' + rule + '\n' + blocks.join('\n\n');
-    if (reserves.length) txt += '\n\nRESERVES: ' + reserves.map((p) => p.name).join(', ');
+    if (reserves.length) txt += '\n\nRESERVES: ' + reserves.map((p) => `${p.name} [${p.role === 'sniper' ? 'Sniper' : 'Rifle'}]`).join(', ');
     return txt + '\n```';
 }
 
@@ -188,31 +289,12 @@ export default function ShuffleIndex({ games, bye, reserves, presentCount, snipe
     const teamNames = usePage().props.teamNames;
     const [copied, setCopied] = useState(false);
     const [shuffling, setShuffling] = useState(false);
-    const [modalGame, setModalGame] = useState(null);
-    const [phase, setPhase] = useState('ask');
-    const [winner, setWinner] = useState(null);
 
     const reshuffle = () =>
         router.post(route('shuffle.run'), {}, {
             preserveScroll: true,
             onStart: () => setShuffling(true),
             onFinish: () => setShuffling(false),
-        });
-
-    const openRecord = (game) => {
-        setModalGame(game);
-        setPhase('ask');
-        setWinner(null);
-    };
-
-    const recordWin = (w) =>
-        router.post(route('matches.store'), { game: modalGame.index, winner: String(w) }, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setWinner(w);
-                setPhase('done');
-                setTimeout(() => setModalGame(null), 1500);
-            },
         });
 
     const copy = async () => {
@@ -262,7 +344,7 @@ export default function ShuffleIndex({ games, bye, reserves, presentCount, snipe
                 ) : (
                     <>
                         {games.map((g) => (
-                            <GameCard key={g.index} game={g} onRecord={openRecord} />
+                            <GameCard key={g.index} game={g} />
                         ))}
 
                         {bye && (
@@ -290,10 +372,6 @@ export default function ShuffleIndex({ games, bye, reserves, presentCount, snipe
                         </div>
                     </>
                 )}
-
-                {modalGame && (
-                    <RecordModal game={modalGame} phase={phase} winner={winner} onPick={recordWin} onClose={() => setModalGame(null)} />
-                )}
             </div>
         </AppLayout>
     );
@@ -308,47 +386,6 @@ function EmptyState({ title, subtitle, children }) {
             <Link href={route('roster.index')} style={{ display: 'inline-block', marginTop: 16, padding: '10px 18px', background: '#f59e0b', color: INK, fontFamily: "'Oswald'", fontWeight: 700, fontSize: 13, letterSpacing: '.12em', borderRadius: 2, textDecoration: 'none' }}>
                 GO TO ROSTER
             </Link>
-        </div>
-    );
-}
-
-function RecordModal({ game, phase, winner, onPick, onClose }) {
-    const teamNames = usePage().props.teamNames;
-    const labels = game.teamIndices.map((i) => ({ label: teamLabel(i, teamNames), color: teamColor(i) }));
-    const isDraw = winner === 'draw';
-    const winColor = isDraw ? '#9aa0ac' : labels[winner]?.color;
-    const winSub = isDraw ? 'DRAW' : (labels[winner]?.label ?? '') + ' WON';
-
-    return (
-        <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(5,6,8,.82)', backdropFilter: 'blur(4px)' }}>
-            <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 362, background: '#101218', border: '1px solid #2b303a', borderTop: '3px solid #f59e0b', borderRadius: 4, padding: 22, boxShadow: '0 24px 60px rgba(0,0,0,.6)' }}>
-                {phase === 'ask' ? (
-                    <div>
-                        <div style={{ textAlign: 'center', fontFamily: "'Share Tech Mono'", fontSize: 10, letterSpacing: '.24em', color: '#565c68', marginBottom: 5 }}>GAME {game.index + 1} OUTCOME</div>
-                        <div style={{ textAlign: 'center', fontFamily: "'Oswald'", fontWeight: 700, fontSize: 27, letterSpacing: '.14em', color: '#f4f5f7', marginBottom: 20 }}>WHO WON?</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {labels.map((meta, i) => (
-                                <button key={i} type="button" onClick={() => onPick(i)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 17px', border: `1px solid ${meta.color}55`, cursor: 'pointer', background: `${meta.color}14`, borderRadius: 3 }}>
-                                    <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 18, letterSpacing: '.16em', color: meta.color }}>{meta.label}</span>
-                                    <span style={{ fontFamily: "'Share Tech Mono'", fontSize: 13, color: '#8a909c' }}>{game.powers[i]} PWR</span>
-                                </button>
-                            ))}
-                            <button type="button" onClick={() => onPick('draw')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '13px 17px', border: '1px solid #2b303a', cursor: 'pointer', background: '#161922', borderRadius: 3 }}>
-                                <span style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 16, letterSpacing: '.2em', color: '#9aa0ac' }}>DRAW</span>
-                            </button>
-                        </div>
-                        <button type="button" onClick={onClose} style={{ width: '100%', marginTop: 15, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Oswald'", fontWeight: 600, fontSize: 12, letterSpacing: '.18em', color: '#565c68', padding: 6 }}>CANCEL</button>
-                    </div>
-                ) : (
-                    <div style={{ textAlign: 'center', padding: '10px 0 6px' }}>
-                        <div style={{ width: 62, height: 62, margin: '0 auto 18px', borderRadius: '50%', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(52,211,153,.35)' }}>
-                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#34d399" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                        </div>
-                        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 23, letterSpacing: '.14em', color: '#f4f5f7' }}>MATCH LOGGED</div>
-                        <div style={{ fontFamily: "'Oswald'", fontWeight: 700, fontSize: 14, letterSpacing: '.18em', marginTop: 9, color: winColor }}>{winSub}</div>
-                    </div>
-                )}
-            </div>
         </div>
     );
 }

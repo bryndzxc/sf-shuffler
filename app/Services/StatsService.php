@@ -17,7 +17,7 @@ class StatsService
     /**
      * @param  Collection<int,Player>  $players  the players to rank (the roster)
      * @param  Collection<int,GameMatch>  $matches  ordered oldest → newest
-     * @return array<int,array{id:int,name:string,tier:string,role:string,games:int,wins:int,win_rate:float,streak:int}>
+     * @return array<int,array{id:int,name:string,role:string,games:int,wins:int,win_rate:float,streak:int}>
      */
     public function leaderboard(Collection $players, Collection $matches): array
     {
@@ -59,7 +59,6 @@ class StatsService
                 return [
                     'id' => $p->id,
                     'name' => $p->name,
-                    'tier' => $p->tier,
                     'role' => $p->role,
                     'games' => $games,
                     'wins' => $wins,

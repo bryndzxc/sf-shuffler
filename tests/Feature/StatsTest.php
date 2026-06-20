@@ -39,11 +39,12 @@ class StatsTest extends TestCase
                 ->where('leaderboard.0.name', 'Alice')   // winner ranks first
                 ->where('leaderboard.0.wins', 1)
                 ->where('leaderboard.0.streak', 1)
-                ->where('leaderboard.0.mmr', 675)        // B seed 650 + win 25
+                ->where('leaderboard.0.mmr', 525)        // C seed 500 + win 25
+                ->where('leaderboard.0.tier', 'C')       // derived from MMR
                 ->where('leaderboard.1.name', 'Bob')
                 ->where('leaderboard.1.wins', 0)
                 ->where('leaderboard.1.streak', -1)
-                ->where('leaderboard.1.mmr', 635));      // B seed 650 − loss 15
+                ->where('leaderboard.1.mmr', 485));      // C seed 500 − loss 15
     }
 
     public function test_stats_count_across_a_three_team_match(): void
